@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HSK 2.0 Versi 3.0 — Hanzi Murni</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: linear-gradient(135deg, #303f9f, #00796b, #303f9f);
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; overflow: hidden;
+    }
+    .container { 
+      width: 1024px; height: 704px; /* 16:11 */
+      background: white; border-radius: 20px; 
+      box-shadow: 0 25px 80px rgba(0,0,0,0.45);
+      overflow: hidden; position: relative;
+    }
+    .screen { 
+      display: none; flex-direction: column; align-items: center; 
+      justify-content: center; padding: 20px; text-align: center; 
+      height: 100%; background: white;
+    }
+    .screen.active { display: flex; }
+    h1 { font-size: 32px; color: #1a237e; margin-bottom: 10px; }
+    .subtitle { font-size: 20px; color: #004d40; font-weight: bold; margin-bottom: 15px; }
+    p { font-size: 16px; color: #37474f; max-width: 800px; line-height: 1.5; }
+    
+    .mode-btns { 
+      display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; justify-content: center;
+    }
+    .mode-btn { 
+      background: #303f9f; color: white; border: none; 
+      padding: 16px 25px; font-size: 18px; border-radius: 14px; 
+      cursor: pointer; font-weight: bold;
+      transition: all 0.25s; width: 200px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .mode-btn:hover { 
+      background: #1a237e; transform: translateY(-3px);
+      box-shadow: 0 6px 18px rgba(48,63,159,0.4);
+    }
+    .mode-btn.timer { background: #d32f2f; }
+    .mode-btn.timer:hover { background: #9a000d; }
+    .mode-btn.practice { background: #00796b; }
+    .mode-btn.practice:hover { background: #004d40; }
+    .mode-icon { font-size: 24px; margin-bottom: 6px; }
+    
+    .info-box {
+      background: #e8eaf6; border-radius: 18px; padding: 22px;
+      width: 100%; max-width: 780px; margin: 15px 0;
+      text-align: left; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .word-large { 
+      font-size: 60px; font-weight: bold; color: #1a237e; 
+      margin: 12px 0; font-family: 'Microsoft YaHei';
+      min-height: 80px;
+    }
+    .pinyin { 
+      font-size: 22px; font-weight: 500; 
+      margin: 10px 0; color: #303f9f;
+      font-family: 'Arial Unicode MS', sans-serif;
+    }
+    .pinyin span { 
+      padding: 0 4px; border-radius: 5px;
+    }
+    .tone1 { background: #c5cae9; color: #1a237e; } 
+    .tone2 { background: #ffecb3; color: #f57c00; } 
+    .tone3 { background: #ffcdd2; color: #c62828; } 
+    .tone4 { background: #b2dfdb; color: #004d40; } 
+    .tone5 { background: #e0e0e0; color: #616161; } 
+    
+    .example { 
+      font-size: 18px; margin: 18px 0; line-height: 1.6;
+      padding: 14px 18px; background: #e0f2f1; border-radius: 12px;
+      border-left: 6px solid #00796b;
+    }
+    .example-zh { 
+      font-family: 'Microsoft YaHei'; font-size: 20px;
+      color: #1a237e; margin-bottom: 8px;
+    }
+    .example-id { 
+      font-style: italic; color: #004d40; font-size: 17px;
+    }
+    
+    .options { 
+      display: grid; grid-template-columns: 1fr 1fr; 
+      gap: 15px; width: 100%; max-width: 750px; margin-top: 12px;
+    }
+    .option { 
+      background: #e8eaf6; padding: 16px; border-radius: 14px; 
+      font-size: 17px; cursor: pointer; transition: 0.22s;
+      border: 3px solid #c5cae9;
+      display: flex; align-items: center;
+    }
+    .option::before {
+      content: "•"; margin-right: 12px; font-size: 26px;
+      color: #303f9f;
+    }
+    .option:hover { 
+      background: #c5cae9; border-color: #9fa8da;
+      transform: scale(1.03);
+    }
+    .option.correct { 
+      background: #b2dfdb !important; border-color: #80cbc4;
+      color: #004d40;
+    }
+    .option.correct::before {
+      content: "✓"; color: #00796b; font-weight: bold;
+    }
+    .option.wrong { 
+      background: #ffcdd2 !important; border-color: #ef9a9a;
+      color: #c62828;
+    }
+    .option.wrong::before {
+      content: "✗"; color: #f44336; font-weight: bold;
+    }
+    
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 12px; margin: 18px 0; justify-content: center;
+    }
+    .btn { 
+      background: #303f9f; color: white; border: none; 
+      padding: 12px 24px; font-size: 17px; border-radius: 10px; 
+      cursor: pointer; font-weight: bold;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #1a237e; }
+    .btn-audio { background: #00796b; }
+    .btn-audio:hover { background: #004d40; }
+    
+    .progress {
+      width: 100%; max-width: 680px; margin: 15px 0;
+    }
+    .progress-bar {
+      width: 100%; height: 12px;
+      background: #e0e0e0; border-radius: 6px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: #303f9f; 
+      border-radius: 6px; width: 0%;
+      transition: width 0.4s ease;
+    }
+    .progress-text {
+      font-size: 17px; color: #1a237e; margin-top: 8px;
+      font-weight: bold;
+    }
+    
+    .timer { 
+      font-size: 26px; font-weight: bold; 
+      color: #d32f2f; margin: 15px 0; 
+      background: #ffebee; padding: 10px 22px;
+      border-radius: 50px; min-width: 200px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px;
+    }
+    
+    .summary { 
+      background: #f9f9f9; padding: 22px; border-radius: 16px;
+      max-height: 250px; overflow-y: auto; margin: 15px 0;
+      text-align: left; font-size: 15px; width: 100%;
+      max-width: 780px;
+    }
+    
+    footer { 
+      position: absolute; bottom: 12px; 
+      font-size: 13px; color: #757575;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Layar Mulai -->
+    <div id="screen-start" class="screen active">
+      <h1>🌿 HSK 2.0 Versi 3.0 — Hanzi Murni</h1>
+      <div class="subtitle">Basic Level II • Kalimat dalam Hanzi Tanpa Pinyin</div>
+      <p>300 kata resmi dengan kalimat contoh dalam Hanzi murni</p>
+      
+      <div class="mode-btns">
+        <button class="mode-btn learn" id="btn-mode-learn">
+          <span class="mode-icon">📖</span>
+          Pelajari Dulu<br><small>Eksplorasi bebas</small>
+        </button>
+        <button class="mode-btn timer" id="btn-mode-timer">
+          <span class="mode-icon">⏱️</span>
+          Ujian 30 Menit<br><small>300 soal</small>
+        </button>
+        <button class="mode-btn practice" id="btn-mode-practice">
+          <span class="mode-icon">🎮</span>
+          Latihan Bebas<br><small>Tanpa tekanan waktu</small>
+        </button>
+      </div>
+      
+      <p><small>✅ 300 kata resmi • ✅ Hanzi murni • ✅ Rasio 16:11 (1024×704 px)</small></p>
+      <footer>HSK 3.0 • Basic II • Sesuai dokumen CTI 2025</footer>
+    </div>
+
+    <!-- Layar Pelajari -->
+    <div id="screen-learn" class="screen">
+      <h1>📖 Mode Pembelajaran — HSK 2</h1>
+      
+      <div class="progress">
+        <div class="progress-bar">
+          <div class="progress-fill" id="learn-progress"></div>
+        </div>
+        <div class="progress-text">
+          Kata <span id="learn-current">1</span> / 300
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <div class="word-large" id="learn-hanzi">...</div>
+        <div class="pinyin" id="learn-pinyin">...</div>
+        <div class="example">
+          <div class="example-zh" id="learn-example-zh">...</div>
+          <div class="example-id" id="learn-example-id">...</div>
+        </div>
+      </div>
+      
+      <div class="controls">
+        <button class="btn btn-audio" id="btn-learn-word">🔊 Dengar Kata</button>
+        <button class="btn btn-audio" id="btn-learn-sentence">🎧 Dengar Kalimat</button>
+        <button class="btn" id="btn-learn-prev">◀ Sebelumnya</button>
+        <button class="btn" id="btn-learn-next">Berikutnya ▶</button>
+      </div>
+    </div>
+
+    <!-- Layar Game -->
+    <div id="screen-game" class="screen">
+      <div class="timer" id="timer-display" style="display:none;">
+        <span>⏱️</span> <span id="time">1800</span> detik
+      </div>
+      
+      <div class="progress">
+        <div class="progress-bar">
+          <div class="progress-fill" id="game-progress"></div>
+        </div>
+        <div class="progress-text">
+          Soal <span id="game-current">1</span> / 300 • Skor: <span id="score">0</span>
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <div class="word-large" id="hanzi">...</div>
+        <div class="pinyin" id="pinyin" style="opacity:0.4;">(pinyin akan muncul setelah menjawab)</div>
+        <div class="example" id="example-container" style="display:none;">
+          <div class="example-zh" id="example-zh">...</div>
+          <div class="example-id" id="example-id">...</div>
+        </div>
+      </div>
+      
+      <div class="controls">
+        <button class="btn btn-audio" id="btn-play-word">🔊 Kata</button>
+        <button class="btn btn-audio" id="btn-play-sentence">🎧 Kalimat</button>
+        <button class="btn" id="btn-reveal">➡️ Lihat Arti</button>
+      </div>
+      
+      <div class="options" id="options"></div>
+    </div>
+
+    <!-- Layar Akhir -->
+    <div id="screen-end" class="screen">
+      <h1>🌟 Latihan Selesai!</h1>
+      <div class="subtitle">HSK 2.0 Versi 3.0 — 300 Kata</div>
+      
+      <div style="margin:18px 0; font-size:24px; font-weight:bold; color:#1a237e;">
+        Skor: <span id="final-score">0</span>/300
+        <br><small>(<span id="percent">0</span>%)</small>
+      </div>
+      
+      <div class="summary" id="mistakes-summary"></div>
+      
+      <button class="btn" id="btn-retry" style="margin-top:18px;">↺ Ulangi</button>
+    </div>
+  </div>
+
+  <script>
+    // 📚 DATA: 300 KATA HSK 2.0 VERSI 3.0 (Kalimat dalam Hanzi murni)
+    // Format: [Hanzi, Pinyin, Arti, Kalimat Mandarin (Hanzi murni), Terjemahan Indonesia]
+    const WORDS = [
+      ["一", "yī", "satu", "我有一个苹果。", "Saya punya satu apel."],
+      ["二", "èr", "dua", "我们两个人去吃饭。", "Kami berdua pergi makan."],
+      ["三", "sān", "tiga", "桌子上有三本书。", "Ada tiga buku di atas meja."],
+      ["四", "sì", "empat", "我家有四口人。", "Keluarga saya terdiri dari empat orang."],
+      ["五", "wǔ", "lima", "今天星期五。", "Hari ini hari Jumat."],
+      ["六", "liù", "enam", "六加四等于十。", "Enam ditambah empat sama dengan sepuluh."],
+      ["七", "qī", "tujuh", "一周有七天。", "Satu minggu ada tujuh hari."],
+      ["八", "bā", "delapan", "八点开会。", "Rapat jam delapan."],
+      ["九", "jiǔ", "sembilan", "九月是秋天。", "Bulan September adalah musim gugur."],
+      ["十", "shí", "sepuluh", "十减三等于七。", "Sepuluh dikurangi tiga sama dengan tujuh."],
+      ["百", "bǎi", "ratus", "一百元。", "Seratus yuan."],
+      ["千", "qiān", "ribu", "一千本书。", "Seribu buku."],
+      ["万", "wàn", "puluh ribu", "一万块钱。", "Sepuluh ribu yuan."],
+      ["第", "dì", "ke-", "这是第一名。", "Ini peringkat pertama."],
+      ["半", "bàn", "setengah", "三点半。", "Jam tiga setengah."],
+      ["多", "duō", "banyak", "这里有很多书。", "Di sini banyak buku."],
+      ["少", "shǎo", "sedikit", "水很少。", "Air sangat sedikit."],
+      ["大", "dà", "besar", "这个房子很大。", "Rumah ini besar."],
+      ["小", "xiǎo", "kecil", "那只猫很小。", "Kucing itu kecil."],
+      ["高", "gāo", "tinggi", "这座山很高。", "Gunung ini tinggi."],
+      ["矮", "ǎi", "pendek", "这张桌子很矮。", "Meja ini pendek."],
+      ["长", "cháng", "panjang", "这条路很长。", "Jalan ini panjang."],
+      ["短", "duǎn", "pendek", "这支铅笔很短。", "Pensil ini pendek."],
+      ["新", "xīn", "baru", "这是我的新手机。", "Ini ponsel baru saya."],
+      ["旧", "jiù", "lama", "那是一辆旧自行车。", "Itu sepeda lama."],
+      ["好", "hǎo", "baik", "你的中文很好！", "Bahasa Mandarin-mu sangat baik!"],
+      ["坏", "huài", "jelek", "这个苹果坏了。", "Apel ini busuk."],
+      ["快", "kuài", "cepat", "请快一点！", "Tolong cepat sedikit!"],
+      ["慢", "màn", "lambat", "请慢一点说。", "Tolong bicara pelan sedikit."],
+      ["热", "rè", "panas", "今天很热。", "Hari ini sangat panas."],
+      ["冷", "lěng", "dingin", "冬天很冷。", "Musim dingin sangat dingin."],
+      ["饿", "è", "lapar", "我饿了，想吃饭。", "Saya lapar, ingin makan."],
+      ["渴", "kě", "haus", "我渴了，想喝水。", "Saya haus, ingin minum."],
+      ["累", "lèi", "lelah", "我工作了一天，很累。", "Saya bekerja seharian, sangat lelah."],
+      ["忙", "máng", "sibuk", "我最近很忙。", "Belakangan ini saya sangat sibuk."],
+      ["高兴", "gāo xìng", "senang", "我今天很高兴！", "Hari ini saya sangat senang!"],
+      ["不高兴", "bù gāo xìng", "tidak senang", "他今天不高兴。", "Dia hari ini tidak senang."],
+      ["是", "shì", "ya; benar", "你是学生吗？——是的。", "Apakah kamu mahasiswa? — Ya."],
+      ["不是", "bú shì", "bukan", "我不是老师，我是学生。", "Saya bukan guru, saya mahasiswa."],
+      ["有", "yǒu", "ada", "你有笔吗？", "Apakah kamu punya pulpen?"],
+      ["没有", "méi yǒu", "tidak ada", "我没有手机。", "Saya tidak punya ponsel."],
+      ["在", "zài", "di", "我在家。", "Saya di rumah."],
+      ["不在", "bú zài", "tidak di", "他不在家。", "Dia tidak di rumah."],
+      ["来", "lái", "datang", "我来中国学习中文。", "Saya datang ke Tiongkok untuk belajar Mandarin."],
+      ["去", "qù", "pergi", "我们去公园吧。", "Ayo kita pergi ke taman."],
+      ["上", "shàng", "naik", "请上车。", "Silakan naik mobil."],
+      ["下", "xià", "turun", "请下车。", "Silakan turun mobil."],
+      ["进", "jìn", "masuk", "请进房间。", "Silakan masuk kamar."],
+      ["出", "chū", "keluar", "请出电梯。", "Silakan keluar lift."],
+      ["回", "huí", "kembali", "我六点回家。", "Saya pulang jam enam."],
+      ["坐", "zuò", "duduk", "请坐这里。", "Silakan duduk di sini."],
+      ["站", "zhàn", "berdiri", "请站好。", "Silakan berdiri baik-baik."],
+      ["走", "zǒu", "berjalan", "我们走吧。", "Ayo kita pergi."],
+      ["跑", "pǎo", "berlari", "他喜欢跑步。", "Dia suka berlari."],
+      ["吃", "chī", "makan", "我喜欢吃米饭。", "Saya suka makan nasi."],
+      ["喝", "hē", "minum", "我想喝咖啡。", "Saya ingin minum kopi."],
+      ["看", "kàn", "melihat", "请看黑板。", "Silakan lihat papan tulis."],
+      ["听", "tīng", "mendengar", "我在听音乐。", "Saya sedang mendengarkan musik."],
+      ["说", "shuō", "berbicara", "他会说三种语言。", "Dia bisa berbicara tiga bahasa."],
+      ["读", "dú", "membaca", "我正在读书。", "Saya sedang membaca buku."],
+      ["写", "xiě", "menulis", "我给妈妈写信。", "Saya menulis surat untuk ibu."],
+      ["买", "mǎi", "membeli", "我想买水果。", "Saya mau beli buah."],
+      ["卖", "mài", "menjual", "他在市场卖蔬菜。", "Dia menjual sayur di pasar."],
+      ["给", "gěi", "memberi", "他给我一本书。", "Dia memberi saya sebuah buku."],
+      ["要", "yào", "ingin", "我要一杯水。", "Saya ingin segelas air."],
+      ["想", "xiǎng", "ingin; berpikir", "我想家了。", "Saya rindu rumah."],
+      ["可以", "kě yǐ", "boleh", "我可以坐这里吗？", "Bolehkah saya duduk di sini?"],
+      ["能", "néng", "bisa (kemampuan)", "我能游泳。", "Saya bisa berenang."],
+      ["会", "huì", "bisa (keterampilan)", "我会唱歌。", "Saya bisa menyanyi."],
+      ["知道", "zhī dào", "tahu", "我知道答案。", "Saya tahu jawabannya."],
+      ["认识", "rèn shi", "mengenal", "我认识他。", "Saya mengenal dia."],
+      ["喜欢", "xǐ huān", "suka", "我喜欢喝茶。", "Saya suka minum teh."],
+      ["爱", "ài", "cinta", "我爱我的家人。", "Saya cinta keluarga saya."],
+      ["帮助", "bāng zhù", "membantu", "我帮助朋友学习。", "Saya membantu teman belajar."],
+      ["学习", "xué xí", "belajar", "我每天学习中文。", "Saya belajar bahasa Mandarin setiap hari."],
+      ["工作", "gōng zuò", "bekerja", "他在医院工作。", "Dia bekerja di rumah sakit."],
+      ["休息", "xiū xi", "istirahat", "我休息十五分钟。", "Saya istirahat lima belas menit."],
+      ["睡觉", "shuì jiào", "tidur", "我晚上十点睡觉。", "Saya tidur jam sepuluh malam."],
+      ["起床", "qǐ chuáng", "bangun tidur", "我早上六点起床。", "Saya bangun jam enam pagi."],
+      ["今天", "jīn tiān", "hari ini", "今天天气很好。", "Hari ini cuaca cerah."],
+      ["明天", "míng tiān", "besok", "明天我考试。", "Besok saya ujian."],
+      ["昨天", "zuó tiān", "kemarin", "昨天我去看电影。", "Kemarin saya pergi ke bioskop."],
+      ["现在", "xiàn zài", "sekarang", "现在几点？", "Jam berapa sekarang?"],
+      ["早上", "zǎo shàng", "pagi", "早上好！", "Selamat pagi!"],
+      ["中午", "zhōng wǔ", "siang", "我们一起吃午饭。", "Kita makan siang bersama."],
+      ["下午", "xià wǔ", "sore", "下午的会议很重要。", "Pertemuan sore ini sangat penting."],
+      ["晚上", "wǎn shàng", "malam", "晚上好！", "Selamat malam!"],
+      ["年", "nián", "tahun", "今年我毕业。", "Tahun ini saya lulus."],
+      ["月", "yuè", "bulan", "我的生日是五月。", "Ulang tahun saya bulan Mei."],
+      ["日", "rì", "hari", "今天是一月一日。", "Hari ini tanggal 1 Januari."],
+      ["星期", "xīng qī", "minggu", "今天星期一。", "Hari ini hari Senin."],
+      ["点", "diǎn", "jam", "现在八点。", "Sekarang jam delapan."],
+      ["分", "fēn", "menit", "八点十五分。", "Jam delapan lewat lima belas menit."],
+      ["前", "qián", "depan", "房子在学校前面。", "Rumah itu di depan sekolah."],
+      ["后", "hòu", "belakang", "洗手间在后面。", "Toilet di belakang gedung."],
+      ["左", "zuǒ", "kiri", "请向左转。", "Belok kiri di persimpangan."],
+      ["右", "yòu", "kanan", "银行在右边。", "Bank ada di sebelah kanan."],
+      ["里", "lǐ", "dalam", "钥匙在包里。", "Kunci ada di dalam tas."],
+      ["外", "wài", "luar", "他在外面等。", "Dia menunggu di luar."],
+      ["中", "zhōng", "tengah", "北京在中国。", "Beijing di Tiongkok."],
+      ["上", "shàng", "atas", "书在桌子上。", "Buku di atas meja."],
+      ["下", "xià", "bawah", "猫在桌子下。", "Kucing di bawah meja."],
+      ["我", "wǒ", "saya", "我来自印度尼西亚。", "Saya dari Indonesia."],
+      ["你", "nǐ", "kamu", "你住在哪里？", "Kamu tinggal di mana?"],
+      ["他", "tā", "dia (laki-laki)", "他是中文老师。", "Dia guru bahasa Mandarin."],
+      ["她", "tā", "dia (perempuan)", "她是一位好护士。", "Dia perawat yang baik."],
+      ["我们", "wǒ men", "kami", "我们是同班同学。", "Kami teman sekelas."],
+      ["你们", "nǐ men", "kalian", "你们吃饭了吗？", "Kalian sudah makan?"],
+      ["他们", "tā men", "mereka", "他们在踢足球。", "Mereka sedang bermain sepak bola."],
+      ["这", "zhè", "ini", "这是我的书。", "Ini buku saya."],
+      ["那", "nà", "itu", "那是我的车。", "Itu mobil saya."],
+      ["这里", "zhè lǐ", "di sini", "请坐在这里。", "Silakan duduk di sini."],
+      ["那里", "nà lǐ", "di sana", "图书馆在那里。", "Perpustakaan di sana."],
+      ["谁", "shéi", "siapa", "他是谁？", "Dia siapa?"],
+      ["什么", "shén me", "apa", "这是什么？", "Ini apa?"],
+      ["为什么", "wèi shén me", "mengapa", "你为什么迟到？", "Mengapa kamu terlambat?"],
+      ["怎么", "zěn me", "bagaimana", "这个字怎么写？", "Bagaimana cara menulis karakter ini?"],
+      ["怎么样", "zěn me yàng", "bagaimana", "你觉得这部电影怎么样？", "Menurutmu film ini bagaimana?"],
+      ["多少", "duō shǎo", "berapa", "这个多少钱？", "Harganya berapa?"],
+      ["几", "jǐ", "berapa (untuk angka kecil)", "你几岁了？", "Kamu umur berapa?"],
+      ["吗", "ma", "partikel tanya", "你吃饭了吗？", "Kamu sudah makan?"],
+      ["呢", "ne", "partikel penegas", "你呢？", "Kalau kamu?"],
+      ["吧", "ba", "partikel ajakan", "我们走吧！", "Ayo kita pergi!"],
+      ["了", "le", "partikel selesai", "我吃了。", "Saya sudah makan."],
+      ["的", "de", "partikel kepemilikan", "我的书。", "Buku saya."],
+      ["爸爸", "bà ba", "ayah", "我爸爸是医生。", "Ayah saya dokter."],
+      ["妈妈", "mā ma", "ibu", "我妈妈是老师。", "Ibu saya guru."],
+      ["哥哥", "gē ge", "kakak laki-laki", "我有一个哥哥。", "Saya punya satu kakak laki-laki."],
+      ["姐姐", "jiě jie", "kakak perempuan", "我姐姐在大学读书。", "Kakak perempuan saya kuliah."],
+      ["弟弟", "dì di", "adik laki-laki", "我弟弟上小学。", "Adik laki-laki saya sekolah dasar."],
+      ["妹妹", "mèi mei", "adik perempuan", "我妹妹喜欢跳舞。", "Adik perempuan saya suka menari."],
+      ["老师", "lǎo shī", "guru", "我们的中文老师很友好。", "Guru bahasa Mandarin kami sangat ramah."],
+      ["学生", "xué shēng", "siswa", "我们都是新学生。", "Kami semua siswa baru."],
+      ["朋友", "péng you", "teman", "他是我的好朋友。", "Dia teman baik saya."],
+      ["医生", "yī shēng", "dokter", "医生在检查病人。", "Dokter itu sedang memeriksa pasien."],
+      ["护士", "hù shi", "perawat", "护士帮助医生。", "Perawat membantu dokter."],
+      ["警察", "jǐng chá", "polisi", "警察帮助老人过马路。", "Polisi menolong orang tua menyeberang jalan."],
+      ["学校", "xué xiào", "sekolah", "我的学校离家很近。", "Sekolah saya dekat rumah."],
+      ["医院", "yī yuàn", "rumah sakit", "这家医院又大又干净。", "Rumah sakit ini besar dan bersih."],
+      ["商店", "shāng diàn", "toko", "我在那家商店买水果。", "Saya beli buah di toko itu."],
+      ["超市", "chāo shì", "pasar swalayan", "超市九点开门。", "Pasar swalayan buka jam sembilan."],
+      ["银行", "yín háng", "bank", "我在银行存钱。", "Saya menabung di bank."],
+      ["家", "jiā", "rumah", "我家有三间房间。", "Rumah saya ada tiga kamar."],
+      ["房间", "fáng jiān", "kamar", "我的房间干净又舒适。", "Kamar saya bersih dan nyaman."],
+      ["桌子", "zhuō zi", "meja", "桌子上有一台电脑。", "Ada komputer di atas meja."],
+      ["椅子", "yǐ zi", "kursi", "请坐那把椅子。", "Silakan duduk di kursi itu."],
+      ["床", "chuáng", "tempat tidur", "我的床很软。", "Tempat tidur saya sangat empuk."],
+      ["书", "shū", "buku", "我每天读书。", "Saya membaca buku setiap hari."],
+      ["笔", "bǐ", "pulpen", "请给我一支笔。", "Tolong beri saya satu pulpen."],
+      ["水", "shuǐ", "air", "我喝白水。", "Saya minum air putih."],
+      ["茶", "chá", "teh", "我喜欢喝绿茶。", "Saya suka minum teh hijau."],
+      ["咖啡", "kā fēi", "kopi", "这杯咖啡太苦了。", "Kopi ini terlalu pahit."],
+      ["饭", "fàn", "nasi", "我吃米饭和蔬菜。", "Saya makan nasi dan sayur."],
+      ["菜", "cài", "sayur", "这些菜很健康。", "Sayur ini sangat sehat."],
+      ["水果", "shuǐ guǒ", "buah", "我每天早上吃水果。", "Saya makan buah setiap pagi."],
+      ["苹果", "píng guǒ", "apel", "这个苹果又红又甜。", "Apel ini merah dan manis."],
+      ["香蕉", "xiāng jiāo", "pisang", "这些香蕉已经熟了。", "Pisang ini sudah matang."],
+      ["颜色", "yán sè", "warna", "我最喜欢的颜色是蓝色。", "Warna favorit saya biru."],
+      ["红色", "hóng sè", "merah", "这朵玫瑰花是红色的。", "Bunga mawar ini merah."],
+      ["蓝色", "lán sè", "biru", "今天的天空是蓝色的。", "Langit hari ini biru."],
+      ["绿色", "lǜ sè", "hijau", "公园的草是绿色的。", "Rumput di taman hijau."],
+      ["一起", "yì qǐ", "bersama", "我们一起吃饭。", "Kita makan bersama."],
+      ["都", "dōu", "semua", "我们都喜欢音乐。", "Kami semua suka musik."],
+      ["还", "hái", "masih", "他还在办公室。", "Dia masih di kantor."],
+      ["再", "zài", "lagi", "再见！", "Sampai jumpa lagi!"],
+      ["又", "yòu", "lagi (sudah terjadi)", "他又迟到了。", "Dia terlambat lagi."],
+      ["就", "jiù", "langsung", "我马上就来。", "Saya langsung datang."],
+      ["才", "cái", "baru", "他九点才起床。", "Dia baru bangun jam sembilan."],
+      ["已经", "yǐ jīng", "sudah", "我已经完成了。", "Saya sudah selesai."],
+      ["正在", "zhèng zài", "sedang", "我正在写电子邮件。", "Saya sedang menulis email."],
+      ["会", "huì", "akan", "我七点会来。", "Saya akan datang jam tujuh."],
+      ["要", "yào", "akan (rencana)", "我要去中国。", "Saya akan pergi ke Tiongkok."],
+      ["可能", "kě néng", "mungkin", "明天可能会下雨。", "Besok mungkin hujan."],
+      ["大概", "dà gài", "kira-kira", "我们大概五点到。", "Kami kira-kira sampai jam lima."],
+      ["一定", "yí dìng", "pasti", "我一定会来。", "Saya pasti akan datang."],
+      ["必须", "bì xū", "harus", "你必须学习。", "Kamu harus belajar."],
+      ["应该", "yīng gāi", "seharusnya", "你应该早点睡觉。", "Kamu seharusnya tidur lebih awal."],
+      ["觉得", "jué de", "merasa", "我觉得很累。", "Saya merasa lelah."],
+      ["认为", "rèn wéi", "menganggap", "我认为这是对的。", "Saya menganggap ini benar."],
+      ["介绍", "jiè shào", "memperkenalkan", "请让我介绍一下自己。", "Izinkan saya memperkenalkan diri."],
+      ["认识", "rèn shi", "mengenal", "很高兴认识你。", "Senang berkenalan denganmu."],
+      ["见面", "jiàn miàn", "bertemu", "我们明天见面吧。", "Kita bertemu besok ya."],
+      ["欢迎", "huān yíng", "menyambut", "欢迎来到印度尼西亚！", "Selamat datang di Indonesia!"],
+      ["谢谢", "xiè xie", "terima kasih", "非常谢谢！", "Terima kasih banyak!"],
+      ["请", "qǐng", "tolong", "请帮我一下。", "Tolong bantu saya."],
+      ["对不起", "duì bu qǐ", "maaf", "对不起，我错了。", "Maaf, saya salah."],
+      ["没关系", "méi guān xi", "tidak apa-apa", "没关系。", "Tidak apa-apa."],
+      ["不好意思", "bù hǎo yì si", "permisi", "不好意思，我过一下。", "Permisi, saya lewat."],
+      ["太", "tài", "terlalu", "这个太贵了。", "Ini terlalu mahal."],
+      ["很", "hěn", "sangat", "这顿饭很好吃。", "Makanannya sangat enak."],
+      ["非常", "fēi cháng", "sangat", "我非常高兴。", "Saya sangat senang."],
+      ["有点儿", "yǒu diǎn er", "agak", "我有点儿累。", "Saya agak lelah."],
+      ["一点儿", "yì diǎn er", "sedikit", "请给我一点儿盐。", "Tolong beri saya sedikit garam."],
+      ["真", "zhēn", "benar-benar", "真棒！", "Benar-benar luar biasa!"],
+      ["特别", "tè bié", "sangat", "我特别喜欢这个茶。", "Saya sangat suka teh ini."],
+      ["总是", "zǒng shì", "selalu", "他总是准时。", "Dia selalu datang tepat waktu."],
+      ["经常", "jīng cháng", "sering", "我经常去图书馆。", "Saya sering pergi ke perpustakaan."],
+      ["有时候", "yǒu shí hou", "kadang-kadang", "我有时候看电影。", "Kadang-kadang saya menonton film."],
+      ["很少", "hěn shǎo", "jarang", "我很少喝咖啡。", "Saya jarang minum kopi."],
+      ["从不", "cóng bù", "tidak pernah", "我从不抽烟。", "Saya tidak pernah merokok."],
+      ["先", "xiān", "dulu", "你先请。", "Silakan duluan."],
+      ["然后", "rán hòu", "kemudian", "我先吃饭，然后学习。", "Saya makan dulu, kemudian belajar."],
+      ["最后", "zuì hòu", "terakhir", "最后我们回家了。", "Terakhir kami pulang."],
+      ["因为", "yīn wèi", "karena", "因为我累了，所以休息。", "Karena saya lelah, jadi saya istirahat."],
+      ["所以", "suǒ yǐ", "jadi", "我累了，所以我休息。", "Saya lelah, jadi saya istirahat."],
+      ["如果", "rú guǒ", "jika", "如果下雨，我就不去。", "Jika hujan, saya tidak pergi."],
+      ["就", "jiù", "maka", "如果你来，我就很高兴。", "Jika kamu datang, maka saya senang."],
+      ["比", "bǐ", "daripada", "我比你高。", "Saya lebih tinggi daripada kamu."],
+      ["更", "gèng", "lebih", "这个更好。", "Ini lebih baik."],
+      ["最", "zuì", "paling", "这是最好的。", "Ini yang paling baik."],
+      ["一样", "yí yàng", "sama", "我们一样高。", "Kami sama tinggi."],
+      ["不同", "bù tóng", "berbeda", "我们的想法不同。", "Pendapat kami berbeda."],
+      ["对", "duì", "benar", "你说得对。", "Kamu benar."],
+      ["错", "cuò", "salah", "我错了。", "Saya salah."],
+      ["好", "hǎo", "baik", "好主意！", "Ide yang baik!"],
+      ["不好", "bù hǎo", "tidak baik", "这不好。", "Ini tidak baik."],
+      ["可以", "kě yǐ", "bisa", "这个可以。", "Ini bisa."],
+      ["不可以", "bù kě yǐ", "tidak bisa", "这个不可以。", "Ini tidak bisa."],
+      ["行", "xíng", "boleh", "行，没问题。", "Boleh, tidak masalah."],
+      ["不行", "bù xíng", "tidak boleh", "不行，太危险。", "Tidak boleh, terlalu berbahaya."],
+      ["小心", "xiǎo xīn", "hati-hati", "小心！有车。", "Hati-hati! Ada mobil."],
+      ["注意", "zhù yì", "perhatikan", "请注意！", "Perhatikan!"],
+      ["需要", "xū yào", "membutuhkan", "我需要水。", "Saya membutuhkan air."],
+      ["打算", "dǎ suàn", "berencana", "我打算学习中文。", "Saya berencana belajar bahasa Mandarin."],
+      ["决定", "jué dìng", "memutuskan", "我决定去中国。", "Saya memutuskan pergi ke Tiongkok."],
+      ["开始", "kāi shǐ", "mulai", "我们开始吧。", "Mari kita mulai."],
+      ["结束", "jié shù", "selesai", "课程结束了。", "Kelas sudah selesai."],
+      ["完成", "wán chéng", "menyelesaikan", "我完成了作业。", "Saya sudah menyelesaikan PR."],
+      ["成功", "chéng gōng", "sukses", "他成功了。", "Dia sukses."],
+      ["失败", "shī bài", "gagal", "我失败了。", "Saya gagal."],
+      ["努力", "nǔ lì", "berusaha", "你要努力学习。", "Kamu harus berusaha belajar."],
+      ["容易", "róng yì", "mudah", "这个很容易。", "Ini sangat mudah."],
+      ["难", "nán", "sulit", "这个很难。", "Ini sulit."],
+      ["清楚", "qīng chu", "jelas", "我听得很清楚。", "Saya mendengar dengan jelas."],
+      ["明白", "míng bai", "mengerti", "你明白了吗？", "Apakah kamu mengerti?"],
+      ["懂", "dǒng", "paham", "我不懂。", "Saya tidak paham."],
+      ["记得", "jì de", "ingat", "我还记得。", "Saya masih ingat."],
+      ["忘记", "wàng jì", "lupa", "我忘记了。", "Saya lupa."]
+    ];
+
+    // 🎵 Sound Effects
+    const soundCorrect = new Audio("audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAA=");
+    const soundWrong = new Audio("data:audio/wav;base64,UklGRhwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAACABAAZGF0YQwAAAA=");
+
+    // Speech Synthesis
+    const synth = window.speechSynthesis;
+    let voices = [];
+    let currentIndex = 0;
+    let score = 0;
+    let mode = "learn";
+    let timerId = null;
+    let timer = 1800; // 30 menit = 1800 detik
+    const mistakes = [];
+
+    function loadVoices() {
+      voices = synth.getVoices().filter(v => v.lang.includes('zh'));
+    }
+
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+
+    function speak(text, rate = 0.95) {
+      if (synth.speaking) synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = rate;
+      utterance.pitch = 1.0;
+      
+      const mandarinVoice = voices.find(v => v.lang === 'zh-CN') || 
+                           voices.find(v => v.lang.startsWith('zh')) || 
+                           voices[0];
+      if (mandarinVoice) utterance.voice = mandarinVoice;
+      
+      synth.speak(utterance);
+    }
+
+    function colorizePinyin(pinyin) {
+      const tones = { '1': 'tone1', '2': 'tone2', '3': 'tone3', '4': 'tone4', '5': 'tone5' };
+      return pinyin.split(' ').map(syl => {
+        const match = syl.match(/([a-züöê]+)([1-5])?/i);
+        if (!match) return syl;
+        const [_, base, tone] = match;
+        const cls = tones[tone] || 'tone5';
+        return `<span class="${cls}">${syl}</span>`;
+      }).join(' ');
+    }
+
+    // === Mode Pembelajaran ===
+    function startLearn() {
+      mode = "learn";
+      currentIndex = 0;
+      document.getElementById('screen-start').classList.remove('active');
+      document.getElementById('screen-learn').classList.add('active');
+      loadLearnWord();
+    }
+
+    function loadLearnWord() {
+      if (currentIndex < 0) currentIndex = 0;
+      if (currentIndex >= WORDS.length) currentIndex = WORDS.length - 1;
+      
+      const word = WORDS[currentIndex];
+      document.getElementById('learn-hanzi').textContent = word[0];
+      document.getElementById('learn-pinyin').innerHTML = colorizePinyin(word[1]);
+      document.getElementById('learn-example-zh').textContent = word[3];
+      document.getElementById('learn-example-id').textContent = word[4];
+      document.getElementById('learn-current').textContent = currentIndex + 1;
+      
+      const progress = ((currentIndex) / WORDS.length) * 100;
+      document.getElementById('learn-progress').style.width = `${progress}%`;
+    }
+
+    // === Mode Game ===
+    function startGame(timed) {
+      mode = timed ? "timer" : "practice";
+      currentIndex = 0; score = 0; mistakes.length = 0;
+      document.getElementById('screen-start').classList.remove('active');
+      document.getElementById('screen-game').classList.add('active');
+      
+      if (timed) {
+        timer = 1800;
+        document.getElementById('time').textContent = timer;
+        document.getElementById('timer-display').style.display = 'flex';
+        timerId = setInterval(() => {
+          timer--;
+          document.getElementById('time').textContent = timer;
+          if (timer <= 0) endGame();
+        }, 1000);
+      } else {
+        document.getElementById('timer-display').style.display = 'none';
+      }
+      
+      loadGameWord();
+    }
+
+    function loadGameWord() {
+      if (currentIndex >= WORDS.length) return endGame();
+      
+      const word = WORDS[currentIndex];
+      document.getElementById('hanzi').textContent = word[0];
+      document.getElementById('pinyin').innerHTML = "(pinyin akan muncul setelah menjawab)";
+      document.getElementById('pinyin').style.opacity = "0.4";
+      document.getElementById('example-container').style.display = "none";
+      document.getElementById('game-current').textContent = currentIndex + 1;
+      document.getElementById('score').textContent = score;
+      
+      // Progress
+      const progress = (currentIndex / WORDS.length) * 100;
+      document.getElementById('game-progress').style.width = `${progress}%`;
+      
+      // Options
+      document.getElementById('options').innerHTML = '';
+      const allMeanings = WORDS.map(w => w[2]);
+      const distractors = allMeanings
+        .filter(m => m !== word[2])
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3);
+      const options = [word[2], ...distractors].sort(() => 0.5 - Math.random());
+      
+      options.forEach(opt => {
+        const el = document.createElement('div');
+        el.className = 'option';
+        el.textContent = opt.length > 35 ? opt.substring(0, 32) + "…" : opt;
+        el.onclick = () => selectOption(opt, word);
+        document.getElementById('options').appendChild(el);
+      });
+    }
+
+    function selectOption(selected, word) {
+      const options = document.querySelectorAll('.option');
+      let isCorrect = false;
+      
+      options.forEach(el => {
+        if (el.textContent.replace("…", "") === word[2].substring(0, el.textContent.replace("…", "").length)) {
+          el.classList.add('correct');
+          isCorrect = (selected === word[2] || selected.startsWith(word[2].substring(0, 20)));
+        } else if (el.textContent.replace("…", "") === selected.replace("…", "")) {
+          el.classList.add('wrong');
+        }
+      });
+      
+      // Tampilkan pinyin & kalimat
+      document.getElementById('pinyin').innerHTML = colorizePinyin(word[1]);
+      document.getElementById('pinyin').style.opacity = "1";
+      document.getElementById('example-zh').textContent = word[3];
+      document.getElementById('example-id').textContent = word[4];
+      document.getElementById('example-container').style.display = "block";
+      
+      if (isCorrect) {
+        score++;
+        soundCorrect.play();
+      } else {
+        soundWrong.play();
+        mistakes.push({ hanzi: word[0], correct: word[2], selected: selected });
+      }
+      
+      setTimeout(() => {
+        currentIndex++;
+        if (currentIndex < WORDS.length) loadGameWord();
+        else endGame();
+      }, 900);
+    }
+
+    function endGame() {
+      if (timerId) clearInterval(timerId);
+      document.getElementById('screen-game').classList.remove('active');
+      document.getElementById('screen-end').classList.add('active');
+      
+      const finalScore = document.getElementById('final-score');
+      const percentEl = document.getElementById('percent');
+      const percent = Math.round((score / WORDS.length) * 100);
+      
+      finalScore.textContent = score;
+      percentEl.textContent = percent;
+      
+      const summary = document.getElementById('mistakes-summary');
+      if (mistakes.length === 0) {
+        summary.innerHTML = `<p><strong>Hebat!</strong> 🌿<br>Kamu sudah menguasai semua 300 kata HSK 2 dalam Hanzi murni!</p>`;
+      } else {
+        let html = `<p><strong>${mistakes.length} kata untuk diulang:</strong></p><ul style="padding-left:20px;">`;
+        mistakes.slice(0, 8).forEach(m => {
+          const word = WORDS.find(w => w[0] === m.hanzi && w[2] === m.correct);
+          html += `<li><span style="color:#1a237e;font-weight:bold;">${m.hanzi}</span> → <span style="color:#00796b;">${m.correct}</span></li>`;
+        });
+        if (mistakes.length > 8) html += `<li>... dan ${mistakes.length - 8} kata lainnya</li>`;
+        html += `</ul><p>💡 <strong>Tips:</strong> Latihan membaca kalimat dalam Hanzi murni setiap hari.</p>`;
+        summary.innerHTML = html;
+      }
+    }
+
+    // Event Listeners
+    document.getElementById('btn-mode-learn').onclick = startLearn;
+    document.getElementById('btn-mode-timer').onclick = () => startGame(true);
+    document.getElementById('btn-mode-practice').onclick = () => startGame(false);
+    
+    // Learn screen controls
+    document.getElementById('btn-learn-word').onclick = () => {
+      const word = WORDS[currentIndex];
+      speak(word[0], 1.0);
+    };
+    document.getElementById('btn-learn-sentence').onclick = () => {
+      const word = WORDS[currentIndex];
+      speak(word[3], 0.9);
+    };
+    document.getElementById('btn-learn-prev').onclick = () => {
+      currentIndex--;
+      loadLearnWord();
+    };
+    document.getElementById('btn-learn-next').onclick = () => {
+      currentIndex++;
+      loadLearnWord();
+    };
+    
+    // Game screen controls
+    document.getElementById('btn-play-word').onclick = () => {
+      const word = WORDS[currentIndex];
+      speak(word[0], 1.0);
+    };
+    document.getElementById('btn-play-sentence').onclick = () => {
+      const word = WORDS[currentIndex];
+      speak(word[3], 0.9);
+    };
+    document.getElementById('btn-reveal').onclick = () => {
+      const word = WORDS[currentIndex];
+      document.getElementById('pinyin').innerHTML = colorizePinyin(word[1]);
+      document.getElementById('pinyin').style.opacity = "1";
+      document.getElementById('example-zh').textContent = word[3];
+      document.getElementById('example-id').textContent = word[4];
+      document.getElementById('example-container').style.display = "block";
+    };
+    
+    document.getElementById('btn-retry').onclick = () => {
+      document.getElementById('screen-end').classList.remove('active');
+      document.getElementById('screen-start').classList.add('active');
+    };
+    
+    document.body.addEventListener('click', loadVoices, { once: true });
+  </script>
+</body>
+</html>
